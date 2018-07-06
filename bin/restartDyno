@@ -1,0 +1,18 @@
+#!/usr/bin/env node
+var XMLHttpRequest = require("../node_modules/xmlhttprequest").XMLHttpRequest;
+
+  var xhttp = new XMLHttpRequest();
+  xhttp.onreadystatechange = function() {
+    if (this.readyState == 4 && this.status == 200) {
+    	console.log(this.responseText);
+    } else {
+    	console.log(JSON.stringify(this));
+    }
+  };
+  xhttp.open("Delete", "https://api.heroku.com/apps/larecoin/dynos", false);
+  xhttp.setRequestHeader("Authorization", "Bearer afaf7274-69b5-448c-966b-c484f06c417c");
+  xhttp.setRequestHeader("Content-Type", "application/json");
+  xhttp.setRequestHeader("Accept", "application/vnd.heroku+json; version=3");
+ 
+
+  xhttp.send();

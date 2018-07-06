@@ -1,0 +1,95 @@
+#!/usr/bin/env node
+var Parse = require('parse/node');
+var AmazonSES = require('../node_modules/amazon-ses-mailer');
+var ses = new AmazonSES('AKIAJ7VE6UZ43OCGPWUQ', '4uRAge/wwr5qRxFU8Lhmbwpet6nssQBPASreyi/t', 'us-east-1');
+
+
+Parse.initialize("p94Lp2L9heC5ZAKaPfAkbhB5FaxtLfyAV25ePwwsQUTMH7cZY4UkUrRBXAvEC6nJQUgZ32hdAS2KDfKFjTzrMMzEDCYHCZmn8ND4epbG3xef7J7eHqTFmKBRQN", 'js-key','MVaeXFSX4rYjqThft2P3RWTGePFCfjfW4GUj9cGcqzStsaDzhqGjWa2QR5QcHFHDTsetDYhqEp5MzxSZCXNvRTFWTxAqZeFLjGusndx8at3NtHhpXdu2fRGsRF');
+Parse.serverURL = 'https://larecoin.herokuapp.com/parse';
+Parse.Cloud.useMasterKey();
+
+var crypto = require('crypto');
+const ENCRYPTION_KEY = "XeLcmDnjFufaNLNBuYD7PfwQwmmeT5PE"; // Must be 256 bytes (32 characters)
+const IV_LENGTH = 16; // For AES, this is always 16
+
+	
+
+var _User = Parse.Object.extend("_User");
+var query = new Parse.Query(_User);
+query.equalTo("evSent", false);
+query.limit(500);
+query.select('objectId','email','username');
+query.find({
+  success: function(results) {
+  	results.map(function(ob) {
+		Parse.User.requestPasswordReset(ob.get('username'), {
+		  success: function() {
+			var query2 = new Parse.Query(_User);
+			query2.get(ob.id, {
+			  success: function(data) {
+			 	data.set('evSent',true);
+			 	data.save();
+			 	console.log("Saved and Sent to " + ob.get('username'));
+
+			  },
+			  error: function(object, error) {
+			    console.log("Error: " + error.code + " " + error.message);
+			  }
+			});
+		  },
+		  error: function(error) {
+		    console.log("Error: " + error.code + " " + error.message);
+		  }
+		}); 
+
+  	});
+  },
+  error: function(error) {
+    console.log("Error: " + error.code + " " + error.message);
+  }
+});
+
+
+
+
+//get total lare
+// var _User = Parse.Object.extend("_User");
+// var query = new Parse.Query(_User);
+// query.select('totalLare');
+// query.limit(30000);
+// query.find({
+//   success: function(results) {
+//   	var totalLare = 0;
+//   	results.map(function(ob) {
+//   		totalLare += parseFloat(ob.get('totalLare'));
+//   		console.log(totalLare);
+
+//   	});
+//   },
+//   error: function(error) {
+//     console.log("Error: " + error.code + " " + error.message);
+//   }
+// });
+
+
+function encrypt(text) {
+	 let iv = crypto.randomBytes(IV_LENGTH);
+	 let cipher = crypto.createCipheriv('aes-256-cbc', new Buffer(ENCRYPTION_KEY), iv);
+	 let encrypted = cipher.update(text);
+
+	 encrypted = Buffer.concat([encrypted, cipher.final()]);
+
+	 return iv.toString('hex') + ':' + encrypted.toString('hex');
+}
+
+function isCaps(email) {
+	for (var i = 0; i < email.length; i++) {
+		var letter = email[i];
+		if (letter == letter.toUpperCase()) {
+			return true;
+		}
+	}
+	return false;
+}
+
+
