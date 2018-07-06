@@ -73,7 +73,7 @@ var app = express();
 app.use(cors({
     allowedOrigins: [
         'http://localhost:4000',
-        'http://larecoin.com'
+        'http://larecoin.kennjdemo.com'
     ]
 }))
 
