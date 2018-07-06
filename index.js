@@ -2,6 +2,8 @@ var express = require('express');
 var ParseServer = require('parse-server').ParseServer;
 var path = require('path');
 var bodyParser = require('body-parser');
+var cors = require('express-cors')
+
 
 require('@risingstack/trace');
 require('dotenv').config()
@@ -16,18 +18,19 @@ var s3Adapter = new S3Adapter(
     { directAccess: true }
 );
 
-var MONGOURI = process.env.MONGOURI || "mongodb://heroku_f7lwktpj:pho1grven497djf9ttssehe51r@ds135399.mlab.com:35399/heroku_f7lwktpj"
 
+var MONGOURI = process.env.MONGOURI || 'mongodb://heroku_f7lwktpj:pho1grven497djf9ttssehe51r@ds135399.mlab.com:35399/heroku_f7lwktpj'
+var publicServerURL = process.env.PUBLIC_SERVER_URL || 'https://larecoin.herokuapp.com/parse'
 
 var api = new ParseServer({
   databaseURI: MONGOURI,
   cloud:  __dirname + '/cloud/main.js',
   appId: 'p94Lp2L9heC5ZAKaPfAkbhB5FaxtLfyAV25ePwwsQUTMH7cZY4UkUrRBXAvEC6nJQUgZ32hdAS2KDfKFjTzrMMzEDCYHCZmn8ND4epbG3xef7J7eHqTFmKBRQN',
-  masterKey: 'MVaeXFSX4rYjqThft2P3RWTGePFCfjfW4GUj9cGcqzStsaDzhqGjWa2QR5QcHFHDTsetDYhqEp5MzxSZCXNvRTFWTxAqZeFLjGusndx8at3NtHhpXdu2fRGsRF', 
-  serverURL: 'https://larecoin.herokuapp.com/parse',
+  masterKey: 'MVaeXFSX4rYjqThft2P3RWTGePFCfjfW4GUj9cGcqzStsaDzhqGjWa2QR5QcHFHDTsetDYhqEp5MzxSZCXNvRTFWTxAqZeFLjGusndx8at3NtHhpXdu2fRGsRF',
+  serverURL: publicServerURL,
   //clientKey:"aBrEscU8MNhsKsGW9bKVNS2HqH2wYTT8cuvgcGRgF6PWMVNAcBGTwn7adLevHs9WY9cVGL7uySrARZFvccd5P98CVckLWTLprn2",
   appName:'Larecoin',
-  publicServerURL:'https://larecoin.herokuapp.com/parse',
+  publicServerURL:publicServerURL,
   emailAdapter: {
       module: "parse-server-amazon-ses-adapter",
       options: {
@@ -43,16 +46,16 @@ var api = new ParseServer({
     passwordResetSuccess: '/public/passwordSuccess.html'
   },
   passwordPolicy: {
-    validatorCallback: (password) => { return validatePassword(password) }, 
+    validatorCallback: (password) => { return validatePassword(password) },
     doNotAllowUsername: true,
-    maxPasswordAge: 30, 
+    maxPasswordAge: 30,
     maxPasswordHistory: 2,
-    resetTokenValidityDuration: 720*60*60, 
+    resetTokenValidityDuration: 720*60*60,
   },
   filesAdapter: s3Adapter,
   fileKey: process.env.PARSE_FILE_KEY,
   liveQuery: {
-    classNames: ["Posts", "Comments"] 
+    classNames: ["Posts", "Comments"]
   }
 });
 
@@ -66,6 +69,13 @@ function validatePassword(password) {
 
 
 var app = express();
+
+app.use(cors({
+    allowedOrigins: [
+        'http://localhost:4000',
+        'http://larecoin.com'
+    ]
+}))
 
 // Serve static assets from the /public folder
 app.use('/public', express.static(path.join(__dirname, '/public')));
@@ -97,11 +107,11 @@ app.post('/api/coinpayments', function(req, res){
    console.log(req.body);
    if (parseInt(body.status) < 0) {
       status = "Error";
-      var exchangeError2 = exchangeError.replace(/{{email}}/g,email); 
-      var exchangeError3 = exchangeError2.replace(/{{VIEWTRANSACTION}}/g,"https://larecoin.github.io/"); 
-      var exchangeError4 = exchangeError3.replace(/{{COIN1}}/g, body.currency2); 
-      var exchangeError5 = exchangeError4.replace(/{{COIN2}}/g, "LARE"); 
-      var exchangeError6 = exchangeError5.replace(/{{DETAILS}}/g, body.status_text); 
+      var exchangeError2 = exchangeError.replace(/{{email}}/g,email);
+      var exchangeError3 = exchangeError2.replace(/{{VIEWTRANSACTION}}/g,"https://larecoin.github.io/");
+      var exchangeError4 = exchangeError3.replace(/{{COIN1}}/g, body.currency2);
+      var exchangeError5 = exchangeError4.replace(/{{COIN2}}/g, "LARE");
+      var exchangeError6 = exchangeError5.replace(/{{DETAILS}}/g, body.status_text);
       ses.send({
       from: "Larecoin <support@larecoin.com>",
         to: [email],
@@ -123,9 +133,9 @@ app.post('/api/coinpayments', function(req, res){
    } else if (parseInt(body.status) >= 100) {
       status = "Complete";
 
-      var exchangeSuccess2 =  exchangeSuccess.replace(/{{email}}/g,email); 
-      var exchangeSuccess3 =  exchangeSuccess2.replace(/{{VIEWTRANSACTION}}/g,"https://larecoin.github.io/"); 
-      var exchangeSuccess4 =  exchangeSuccess3.replace(/{{LAREAMOUNT}}/g, totalLare); 
+      var exchangeSuccess2 =  exchangeSuccess.replace(/{{email}}/g,email);
+      var exchangeSuccess3 =  exchangeSuccess2.replace(/{{VIEWTRANSACTION}}/g,"https://larecoin.github.io/");
+      var exchangeSuccess4 =  exchangeSuccess3.replace(/{{LAREAMOUNT}}/g, totalLare);
       ses.send({
       from: "Larecoin <support@larecoin.com>",
         to: [email],
@@ -150,7 +160,7 @@ app.post('/api/coinpayments', function(req, res){
         "__type": 'Pointer',
         "className": '_User',
         "objectId":  objectID
-      }      
+      }
       var Transactions = Parse.Object.extend("Transactions");
       var query = new Parse.Query(Transactions);
       query.equalTo("userId", userPointer);
@@ -283,17 +293,8 @@ app.post('/api/coinpayments', function(req, res){
 //     buyer_name: 'obTOBMOHTY',
 //     received_amount: '0',
 //     amount1: '5',
-//     received_confirms: '0' 
+//     received_confirms: '0'
 // }
-
-
-
-
-
-
-
-
-
 
 
 
@@ -337,7 +338,7 @@ ParseServer.createLiveQueryServer(httpServer);
 
 
 
-var exchangeSuccess = 
+var exchangeSuccess =
 "<html>"+
 "   <head>"+
 "      <meta http-equiv='Content-type' content='text/html; charset=utf-8'>"+
@@ -643,7 +644,7 @@ var exchangeSuccess =
 "</html>";
 
 
-var exchangeError = 
+var exchangeError =
 "<html>"+
 "   <head>"+
 "      <meta http-equiv='Content-type' content='text/html; charset=utf-8'>"+
