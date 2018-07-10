@@ -74,6 +74,14 @@ app.use(cors({
     allowedOrigins: [
         'http://localhost:4000',
         'http://larecoin.kennjdemo.com'
+    ],
+    headers:[
+        'X-Requested-With',
+        'Content-Type',
+        "Access-Control-Allow-Headers",
+        "Authorization",
+        "X-Parse-Application-ID",
+        "X-Parse-JavaScript-Key"
     ]
 }))
 
