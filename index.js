@@ -94,7 +94,7 @@ app.use(mountPath, api);
 
 // Parse Server plays nicely with the rest of your web routes
 app.get('/', function(req, res) {
-    res.redirect('https://larecoin.com');
+    res.send('API is running');
 });
 
 app.use(bodyParser.urlencoded({ extended: false }));
