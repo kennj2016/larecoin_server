@@ -9,6 +9,21 @@ var iplocation = require('iplocation')
 var geoip = require('geoip-lite');
 
 
+
+var Pusher = require('pusher');
+
+var pusher = new Pusher({
+	appId: '559936',
+	key: 'a427ec34585f9086204c',
+	secret: 'ce659da4b600b3d38652',
+	cluster: 'us2',
+	encrypted: true
+});
+
+
+
+
+
 AmazonS3.config.update({
     accessKeyId: "AKIAIXOSOWERN7J62PUA",
     secretAccessKey: "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",
@@ -58,8 +73,101 @@ Parse.Cloud.beforeSave(Parse.User, function(request, response) {
     response.success();
 });
 
+Parse.Cloud.beforeSave("Followers", function(request, response) {
+
+	var entry = request.object;
+
+	var queryFollowers = new Parse.Query("Followers");
 
 
+	queryFollowers.equalTo('following',{
+		"__type":"Pointer",
+		"objectId":entry.get('following').id,
+		"className":"_User"
+	});
+	queryFollowers.equalTo('follower',{
+		"__type":"Pointer",
+		"objectId":entry.get('follower').id,
+		"className":"_User"
+	});
+
+	queryFollowers.first({
+		success: function(temp) {
+			if(typeof temp != 'undefined' && request.object.isNew() ){
+				return response.error({errorCode:123,errorMsg:"Song already exist!"});
+			}
+			response.success();
+		},
+		error: function(error) {
+			response.success();
+		}
+	});
+});
+
+//verifyEmailSignup
+var pushNotification = function (channel,event,message) {
+	pusher.trigger(channel, event, {
+		"message": message
+	});
+}
+
+var saveNotification = function (from, receiver,message,type,link) {
+	return new Promise(function(resolve,reject){
+
+		var Notification = Parse.Object.extend("Notification");
+		var NotificationQ = new Notification();
+		NotificationQ.set('type',type);
+
+		NotificationQ.set("from", {
+			"__type":"Pointer",
+			"className":"_User",
+			"objectId":from
+		});
+
+		NotificationQ.set("receiver", {
+			"__type":"Pointer",
+			"className":"_User",
+			"objectId":receiver
+		});
+
+		NotificationQ.set('message',message);
+		NotificationQ.set('link',link);
+		NotificationQ.save(null, {
+			success: function() {
+				console.log('1');
+				return resolve(true)
+			}, error:function(obj,err){
+				console.log(obj);
+
+				console.log('e');
+				console.log('err',err);
+				return reject(err)
+			}
+		});
+	})
+}
+
+Parse.Cloud.define('pushNotification', function(request, response) {
+
+	var type = request.params.type;
+	var channel = request.params.channel;
+	var message = request.params.message;
+	var event 	= request.params.event;
+	var from 	= request.params.from;
+	var receiver 	= request.params.receiver;
+	var link 	= request.params.link || null;
+
+	pushNotification(channel,event,message)
+
+	saveNotification(from,receiver,message,type,link).then(function () {
+		console.log('hehe');
+		response.success('push and save notification successfully');
+	}).catch(function (err) {
+		response.error(err);
+	})
+
+
+});
 
 
 
