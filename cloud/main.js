@@ -79,7 +79,6 @@ Parse.Cloud.beforeSave("Followers", function(request, response) {
 
 	var queryFollowers = new Parse.Query("Followers");
 
-
 	queryFollowers.equalTo('following',{
 		"__type":"Pointer",
 		"objectId":entry.get('following').id,
@@ -94,7 +93,7 @@ Parse.Cloud.beforeSave("Followers", function(request, response) {
 	queryFollowers.first({
 		success: function(temp) {
 			if(typeof temp != 'undefined' && request.object.isNew() ){
-				return response.error({errorCode:123,errorMsg:"Song already exist!"});
+				return response.error({errorCode:123,errorMsg:"Followers already exist!"});
 			}
 			response.success();
 		},
@@ -107,7 +106,8 @@ Parse.Cloud.beforeSave("Followers", function(request, response) {
 //verifyEmailSignup
 var pushNotification = function (channel,event,message) {
 	pusher.trigger(channel, event, {
-		"message": message
+		"message": message,
+		data:{from:112}
 	});
 }
 
@@ -132,6 +132,7 @@ var saveNotification = function (from, receiver,message,type,link) {
 
 		NotificationQ.set('message',message);
 		NotificationQ.set('link',link);
+		NotificationQ.set('read',false);
 		NotificationQ.save(null, {
 			success: function() {
 				console.log('1');
