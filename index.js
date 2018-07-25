@@ -19,6 +19,9 @@ var s3Adapter = new S3Adapter(
 );
 
 
+
+
+
 var MONGOURI = process.env.MONGOURI || 'mongodb://heroku_f7lwktpj:pho1grven497djf9ttssehe51r@ds135399.mlab.com:35399/heroku_f7lwktpj'
 var publicServerURL = process.env.PUBLIC_SERVER_URL || 'https://larecoin.herokuapp.com/parse'
 

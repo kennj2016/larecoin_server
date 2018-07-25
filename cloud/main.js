@@ -342,7 +342,7 @@ Parse.Cloud.define('verifyEmailSignup', function(request, response) {
 
 
 	trackEmail('application','emailSend');
-	response.success();
+	response.success('done');
 });
 
 
@@ -948,18 +948,24 @@ Parse.Cloud.define('updateFirstTimeUser', function(request, response) {
 });
 
 Parse.Cloud.define('getSessionData', function(request, response) {
-	
-	var GameScore = Parse.Object.extend("_Session");
-	var query = new Parse.Query(GameScore);
-	query.equalTo("user", request.params.id);
-	query.find({useMasterKey:true}, {
-	  success: function(results) {
-	  	response.success(results);
-	  },
-	  error: function(error) {
-	   response.error(error)
-	  }
+
+	var userPointer1 = {
+		"__type": 'Pointer',
+		"className": '_User',
+		"objectId": request.params.id
+	}
+
+	var sq = new Parse.Query('_Session')
+		.equalTo("user",userPointer1)
+		.include('user');
+
+	sq.first({useMasterKey:true}).then(function(sessionResult) {
+		response.success(sessionResult.get('sessionToken'))
+	}, function(err) {
+		response.error(err)
 	});
+
+
 });
 
 
