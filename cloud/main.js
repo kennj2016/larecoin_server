@@ -242,14 +242,44 @@ Parse.Cloud.define('runReferralCode', function(request, response) {
 
 
 
+//admin send user email
+Parse.Cloud.define('sendUserEmail', function(request, response) {
+
+	var email = request.params.email ,
+		message = request.params.message ;
+
+	console.log(email,message);
+	if(!email || !message){
+	 	return	response.error('cannot send email');
+	}
+
+	ses.send({
+		from: "Larecoin <support@larecoin.com>",
+		to: [email],
+		replyTo: ["support@larecoin.com"],
+		subject: "Message from Larecoin",
+		body: {
+			text: 'Sent by https://www.larecoin.com',
+			html: message
+		}
+	},function(err,data){
+		if (err) {
+			response.error(err);
+		} else {
+			response.success(data);
+		}
+	});
 
 
+
+})
 
 
 
 
 
 //verifyEmailSignup
+
 Parse.Cloud.define('verifyEmailSignup', function(request, response) {
     var email = request.params.email;
     var objectId = encrypt(request.params.objectId);
