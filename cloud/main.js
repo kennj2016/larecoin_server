@@ -660,13 +660,13 @@ Parse.Cloud.define('checkVerified', function(request, response) {
  	
 	var Users = Parse.Object.extend("_User");
 	var query = new Parse.Query(Users);
-	query.get(request.params.id, {
-	  success: function(user) {
-	  	response.success(user);
-	  },
-	  error: function(object, error) {
-	   	response.error('Not a valid user key')
-	  }
+
+	query.equalTo("objectId",request.params.id);
+	query.first().then(function (user) {
+		response.success(user);
+
+	}).catch(function(object, error) {
+		response.error('Not a valid user key')
 	});
 });
 
