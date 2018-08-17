@@ -20,10 +20,6 @@ var pusher = new Pusher({
 	encrypted: true
 });
 
-
-
-
-
 AmazonS3.config.update({
     accessKeyId: "AKIAIXOSOWERN7J62PUA",
     secretAccessKey: "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",
@@ -104,10 +100,10 @@ Parse.Cloud.beforeSave("Followers", function(request, response) {
 });
 
 //verifyEmailSignup
-var pushNotification = function (channel,event,message) {
+var pushNotification = function (channel,event,message,data) {
 	pusher.trigger(channel, event, {
-		"message": message,
-		data:{from:112}
+		message,
+		data
 	});
 }
 
@@ -134,9 +130,9 @@ var saveNotification = function (from, receiver,message,type,link) {
 		NotificationQ.set('link',link);
 		NotificationQ.set('read',false);
 		NotificationQ.save(null, {
-			success: function() {
+			success: function(notification) {
 				console.log('1');
-				return resolve(true)
+				return resolve(notification)
 			}, error:function(obj,err){
 				console.log(obj);
 
@@ -158,10 +154,10 @@ Parse.Cloud.define('pushNotification', function(request, response) {
 	var receiver 	= request.params.receiver;
 	var link 	= request.params.link || null;
 
-	pushNotification(channel,event,message)
 
-	saveNotification(from,receiver,message,type,link).then(function () {
-		console.log('hehe');
+
+	saveNotification(from,receiver,message,type,link).then( (notification) => {
+		pushNotification(channel,event,message,notification)
 		response.success('push and save notification successfully');
 	}).catch(function (err) {
 		response.error(err);
@@ -276,19 +272,83 @@ Parse.Cloud.define('sendUserEmail', function(request, response) {
 
 
 
+Parse.Cloud.define('transferRewardToMyWallet', function(request, response) {
+    let {userId,amount} = request.params
 
+
+    // 1/check user total earn field isset ?
+    // -if yes => use this field to calculator
+    // -if not => check referral table
+
+
+
+
+
+    if(userId && amount){
+
+        var userPointer = {
+            __type: 'Pointer',
+            className: '_User',
+            objectId: userId
+        };
+        var Referrals = Parse.Object.extend('Referrals');
+        var query = new Parse.Query(Referrals);
+        query.equalTo('referee', userPointer);
+        query.equalTo('active', true);
+
+        query.find()
+            .then((results)=>{
+
+
+                let totalReferred = 0
+                for (var i = 0; i < results.length; i++) {
+                    totalReferred  += parseFloat(results[i].get('rewardPercent'))
+                }
+                if(amount < totalReferred){
+                    response.error('your amount not enough');
+                }
+
+
+
+
+
+                // results contains sum of score field and stores it in results[0].total
+            })
+            .catch(function(error) {
+                response.error(error);
+                // There was an error.
+            });
+
+
+    }
+
+
+
+
+
+
+
+})
 
 //verifyEmailSignup
-
 Parse.Cloud.define('verifyEmailSignup', function(request, response) {
     var email = request.params.email;
     var objectId = encrypt(request.params.objectId);
      var refferedEncrpytedUserKey = request.params.referred;
+
+	console.log('request.params.referred', request.params.referred);
+
      if (refferedEncrpytedUserKey != undefined) {
 
      	var userkeyr = decrypt(refferedEncrpytedUserKey);
+
+		 console.log(userkeyr);
+
 		var UserCheck = Parse.Object.extend("_User");
 		var query = new Parse.Query(UserCheck);
+
+		 console.log('user referred',userkeyr);
+
 		query.get(userkeyr, {
 		  success: function(data) {
 			var userPointer1 = {
@@ -311,6 +371,9 @@ Parse.Cloud.define('verifyEmailSignup', function(request, response) {
 			refer.set("totalRewarded", "0");
 			refer.save(null, {
 			  success: function(gameScore) {
+
+			  	console.log('---------------success');
+
 			  	response.success('done');
 
 
