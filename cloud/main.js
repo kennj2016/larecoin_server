@@ -271,62 +271,74 @@ Parse.Cloud.define('sendUserEmail', function(request, response) {
 })
 
 
+const checkUserHasEnoughReward = (userId,amount)=>{
+	return new Promise((resolve,reject)=>{
+		let userPointer = {
+			__type: 'Pointer',
+			className: '_User',
+			objectId: userId
+		};
+		let User = null
+		let totalRewardHasTransfered = 0
+        let totalReferred = 0
+		let Referrals = Parse.Object.extend('Referrals');
+		let query = new Parse.Query(Referrals);
+		query.equalTo('referee', userPointer);
+		query.equalTo('active', true);
 
+		query.find()
+			.then((results)=>{
+				for (var i = 0; i < results.length; i++) {
+					totalReferred  += parseFloat(results[i].get('rewardPercent'))
+				}
+                return results[0].get('referee').fetch()
+			})
+            .then(user=>{
+                if(typeof user.get('totalRewardHasTransfered') != 'undefined' && user.get('totalRewardHasTransfered')){
+                    totalRewardHasTransfered = user.get('totalRewardHasTransfered')
+                }
+                return {
+                    totalReferred,
+                    totalRewardHasTransfered,
+                    user
+                }
+            })
+            .then(({totalReferred,totalRewardHasTransfered,user})=>{
+                let remainReward = totalReferred - totalRewardHasTransfered
+				console.log('remainReward',remainReward);
+				console.log('amount',amount);
+				console.log('user',user);
+
+				if(amount > remainReward){
+					reject('your amount not enough');
+				}
+				resolve(user)
+			})
+			.catch(function(error) {
+				reject(error);
+			});
+	})
+}
 Parse.Cloud.define('transferRewardToMyWallet', function(request, response) {
     let {userId,amount} = request.params
 
-
-    // 1/check user total earn field isset ?
-    // -if yes => use this field to calculator
-    // -if not => check referral table
-
-
-
-
-
     if(userId && amount){
 
-        var userPointer = {
-            __type: 'Pointer',
-            className: '_User',
-            objectId: userId
-        };
-        var Referrals = Parse.Object.extend('Referrals');
-        var query = new Parse.Query(Referrals);
-        query.equalTo('referee', userPointer);
-        query.equalTo('active', true);
+		checkUserHasEnoughReward(userId,amount).then(user=>{
 
-        query.find()
-            .then((results)=>{
+            user.set('totalRewardHasTransfered',amount + user.get('totalRewardHasTransfered'))
+            user.set('totalLare',(parseFloat(amount/1000) + parseFloat(user.get('totalLare'))).toFixed(8).toString())
 
+            user.save(null,{useMasterKey:true}).then(user=>{
+				response.success(user);
+			})
 
-                let totalReferred = 0
-                for (var i = 0; i < results.length; i++) {
-                    totalReferred  += parseFloat(results[i].get('rewardPercent'))
-                }
-                if(amount < totalReferred){
-                    response.error('your amount not enough');
-                }
-
-
-
-
-
-                // results contains sum of score field and stores it in results[0].total
-            })
-            .catch(function(error) {
-                response.error(error);
-                // There was an error.
-            });
+		}).catch(err=>{
+			response.error(err);
+		})
 
 
     }
-
-
-
-
-
-
 
 })
 
