@@ -294,6 +294,11 @@ const checkUserHasEnoughReward = (userId,amount)=>{
                 return results[0].get('referee').fetch()
 			})
             .then(user=>{
+
+            	if(!user.get('accountVerified')){
+					reject('your account need to be verify');
+				}
+
                 if(typeof user.get('totalRewardHasTransfered') != 'undefined' && user.get('totalRewardHasTransfered')){
                     totalRewardHasTransfered = user.get('totalRewardHasTransfered')
                 }
