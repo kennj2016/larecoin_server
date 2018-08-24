@@ -98,7 +98,18 @@ Parse.Cloud.beforeSave("Followers", function(request, response) {
 		}
 	});
 });
+Parse.Cloud.beforeSave("Coins", function(request, response) {
 
+	var entry = request.object;
+	var queryCoins = new Parse.Query("Coins");
+	queryCoins.equalTo('name',entry.get('name'))
+	queryCoins.first().then(result=>{
+		if(typeof result != 'undefined' && request.object.isNew() ){
+			return response.error({errorCode:123,errorMsg:"Coin already exist!"});
+		}
+		response.success();
+	});
+});
 //verifyEmailSignup
 var pushNotification = function (channel,event,message,data) {
 	pusher.trigger(channel, event, {
@@ -330,7 +341,6 @@ Parse.Cloud.define('transferRewardToMyWallet', function(request, response) {
     if(userId && amount){
 
 		checkUserHasEnoughReward(userId,amount).then(user=>{
-
             user.set('totalRewardHasTransfered',amount + user.get('totalRewardHasTransfered'))
             user.set('totalLare',(parseFloat(amount/1000) + parseFloat(user.get('totalLare'))).toFixed(8).toString())
 
