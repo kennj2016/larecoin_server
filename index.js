@@ -63,8 +63,7 @@ var api = new ParseServer({
 });
 
 function validatePassword(password) {
-    var isValid = /^(?=.*[A-Za-z])(?=.*\w)[A-Za-z!-=\w]{8,}$/.test(password) && password !== "";
-    //1 number, 8 characters, 1 uppercase, 1 lowercase
+    var isValid = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d$@$!%*#?&]{8,}$/.test(password) && password !== "";
     return isValid;
 }
 

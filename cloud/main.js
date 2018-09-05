@@ -42,7 +42,7 @@ const startUrl = "https://larecoin.com/#/";
 //Before a user is created, phone verified is set to false
 Parse.Cloud.beforeSave(Parse.User, function(request, response) {
     if (request.object.isNew()) {
-	     request.object.set("phoneVerified", true);
+	     request.object.set("phoneVerified", false);
 	     request.object.set("eVerified", true);
 	     request.object.set("tampered", true);
 	     request.object.set("accountVerified", false);
