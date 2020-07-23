@@ -19,7 +19,7 @@
     "iplocation": "^5.0.0",
     "kerberos": "~0.0.x",
     "node-where": "^1.1.0",
-    "parse": "~1.8.0",
+    "parse": "~2.15.0",
     "parse-server": "*",
     "parse-server-amazon-ses-adapter": "^1.0.0",
     "parse-server-dropbox-adapter": "^1.0.1",
